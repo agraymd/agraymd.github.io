@@ -74,6 +74,7 @@
       <p>May 2019 Salisbury, Maryland</p>
     </div>
 
+
     <footer class="py-4">
       <div class="container">
         <div class="row">
@@ -82,13 +83,40 @@
           </div>
           <div class="col-md-12 text-md-end">
             <ul class="list-unstyled mb-0 noBreak text-center">
-              <li><a target="_blank" class="" href="#">LinkedIn</a></li>
-              <li><a target="_blank" class="" href="#">Email</a></li>
+              <li><a target="_blank" class="" href="https://www.linkedin.com/in/grayalexanderj/">LinkedIn</a></li>
+              <li><a target="_blank" class="" data-bs-toggle="modal" data-bs-target="#exampleModal">Contact</a></li>
             </ul>
           </div>
         </div>
       </div>
     </footer>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Send your message (to a C socket)</h5>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form action="http://54.237.227.50:8080" method="POST">
+              <div class="form-group">
+                  <label for="fname">First name: </label><br />
+                  <input type="text" id="fname" name="fname" class="mt-1"><br><br>
+                  <label for="message">Send a Message:</label>
+                  <textarea class="form-control mt-2" id="message" name="message" rows="4" cols="50"></textarea>
+              </div>
+              <button type="submit" value="Send" class="btn btn-success mt-4">Send</button>
+          </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     
   </div>
 
