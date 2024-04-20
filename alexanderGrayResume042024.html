@@ -10,7 +10,7 @@
   <!-- Script to replace home link with the root url-->
   <script>
     // Get the current root URL
-    var rootUrl = window.location.protocol + "//" + window.location.host;
+    var rootUrl = window.location.origin;
 
     // Get the anchor element by its CLASS
     var anchorElement = document.getElementsByClassName("rootLink");    
