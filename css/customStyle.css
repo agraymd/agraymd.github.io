@@ -1,0 +1,49 @@
+
+/* navbar styling */
+.navbar{
+    background-color: #001c43;
+    text-transform: uppercase;
+}
+
+.navbar a{
+    color: #ffffff;
+}
+
+
+/* Coolor of name on resume */
+.nameColor{
+    color: #002962;
+    font-weight: bolder;
+}
+
+.darkerHeading{
+    color: #002962;
+    font-weight: bolder;
+}
+
+/* heading color without font-weight */
+.darkerHeading-light{
+    color: #002962;
+}
+
+/* job role color */
+.jobRole{
+    color: #002252;
+
+}
+
+/* Education section of resume  */
+.education p{
+    margin: 0;
+}
+
+/* Remove line break between li in footer */
+.noBreak li {
+    display: inline;
+    margin-right: 10px;
+}
+
+/* footer */
+footer a{
+    color: #002252;
+}
