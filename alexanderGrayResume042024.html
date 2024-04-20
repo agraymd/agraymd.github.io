@@ -12,12 +12,11 @@
     // Get the current root URL
     var rootUrl = window.location.origin;
 
-    // Get the anchor element by its CLASS
-    var anchorElement = document.getElementsByClassName("rootLink");    
-
-    // Update links with the root URL
-    anchorElement.href = rootUrl;
-    console.log(rootUrl);
+    // Get  each anchor element by its CLASS and replace href with rootUrl
+    var elements = document.querySelectorAll('.rootLink')
+    elements.forEach(function(element) {
+      element.setAttribute('href', rootUrl);
+    });  
     
   </script>
   <!-- End Script to replace home link with the root url-->
