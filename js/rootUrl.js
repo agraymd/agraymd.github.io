@@ -1,9 +1,10 @@
-    var rootUrl = window.location.origin;
+// Get base URL of page
+var rootUrl = window.location.origin;
 
-    // Get  each anchor element by its CLASS and replace href with rootUrl
-    var elements = document.querySelectorAll('.rootLink')
-    console.log(elements);
-    elements.forEach(function(element) {
-      element.setAttribute('href', rootUrl);
-      console.log(rootUrl);
-    });  
+// Get all elements with CLASS rootLink
+var elements = document.querySelectorAll('.rootLink')
+
+// Iterate through each element replace href with rootUrl
+elements.forEach(function(element) {
+    element.setAttribute('href', rootUrl);
+});  
