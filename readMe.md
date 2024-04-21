@@ -18,6 +18,11 @@ This is how the contact functionality of [the resume page](https://agraymd.githu
 
 ### CODE: 
 
+- Updated 21-APRIL-2024 to continue reading request until entire body is read or client terminates.
+- I noticed an issue where messages sent from Safari were not having the entire request body
+- I took captures on each side and noticed that Safari was sendin the whole request, but it was incomplete on the server side 
+- This indicated that the code was closing the socket before reading the entire message, so I used GPT to fix it 
+
 ```C
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,13 +73,22 @@ int main() {
             exit(1);
         }
 
-        // Read POST data from client
+        // Read request headers
         memset(buffer, 0, MAX_MESSAGE_SIZE);
         n = read(newsockfd, buffer, MAX_MESSAGE_SIZE - 1);
         if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);
         }
+
+        // Find the end of the headers
+        char *body_start = strstr(buffer, "\r\n\r\n");
+        if (body_start == NULL) {
+            fprintf(stderr, "ERROR: Request headers not terminated properly\n");
+            exit(1);
+        }
+        // Move past the headers
+        body_start += 4;
 
         // Save received message to log file
         FILE *fp;
@@ -83,7 +97,7 @@ int main() {
             perror("ERROR opening file");
             exit(1);
         }
-        fprintf(fp, "%s\n", buffer);
+        fprintf(fp, "%s\n", body_start);
         fclose(fp);
 
         // Send response to client
@@ -102,3 +116,8 @@ int main() {
 ```
 
 **Be responsible please :\)**
+
+- I added Google recaptcha to the form to prevent some abuse, and don't expect much traffic anyway. 
+- This is just a fun project for me to experiment with C programming, AWS, AI, web development, and security. 
+
+Thank you for checking out my page, and have a great day :D 
