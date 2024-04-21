@@ -20,7 +20,7 @@ I don't actually expect serious messages here, I just had the idea as a project 
 
 ### C SOCKET HTTP SERVER CODE: 
 
-- Updated 21-APRIL-2024 to continue reading request until entire body is read or client terminates.
+- Updated 21-APRIL-2024 to continue reading requests until the entire body is read or client terminates.
 
 - I noticed an issue where requests sent from Safari did not have the entire request body, but only some of the request headers.
 
