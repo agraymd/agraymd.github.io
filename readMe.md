@@ -16,12 +16,19 @@ There is an ec2 instance running (free tier) that has a C socket listening for P
 
 This is how the contact functionality of [the resume page](https://agraymd.github.io/alexanderGrayResume042024.html) works. 
 
-### CODE: 
+I don't actually expect serious messages here, I just had the idea as a project and wanted to see how far I could take it.
+
+### C SOCKET HTTP SERVER CODE: 
 
 - Updated 21-APRIL-2024 to continue reading request until entire body is read or client terminates.
-- I noticed an issue where messages sent from Safari were not having the entire request body
-- I took captures on each side and noticed that Safari was sendin the whole request, but it was incomplete on the server side 
-- This indicated that the code was closing the socket before reading the entire message, so I used GPT to fix it 
+
+- I noticed an issue where requests sent from Safari did not have the entire request body, but only some of the request headers.
+
+- I took captures on the server and client, and noticed that Safari clients were sending the whole request, but it was incomplete on the server side. I also used Developer tools in the browser to validate.
+
+- This indicated that the code was closing the socket before reading the entire message, so I used GPT to fix the C socket code.
+
+- After implementing changes and testing, the entire message is received from Safari clients. 
 
 ```C
 #include <stdio.h>
@@ -33,14 +40,54 @@ This is how the contact functionality of [the resume page](https://agraymd.githu
 #include <netinet/in.h>
 
 #define PORT 8080
-#define MAX_MESSAGE_SIZE 1024
+#define MAX_MESSAGE_SIZE 4096 // Increased buffer size
+
+void handle_request(int sockfd) {
+    char buffer[MAX_MESSAGE_SIZE];
+    int n;
+
+    // Read request headers (may include Content-Length)
+    memset(buffer, 0, MAX_MESSAGE_SIZE);
+    n = read(sockfd, buffer, MAX_MESSAGE_SIZE - 1);
+    if (n < 0) {
+        perror("ERROR reading from socket");
+        exit(1);
+    }
+
+    // Read the entire request body if Content-Length is present
+    char *content_length_ptr = strstr(buffer, "Content-Length:");
+    if (content_length_ptr != NULL) {
+        int content_length;
+        sscanf(content_length_ptr + strlen("Content-Length:"), "%d", &content_length);
+        int bytes_read = strlen(buffer);
+        while (bytes_read < content_length) {
+            n = read(sockfd, buffer + bytes_read, content_length - bytes_read);
+            if (n < 0) {
+                perror("ERROR reading from socket");
+                exit(1);
+            }
+            bytes_read += n;
+        }
+    }
+
+    // Print request to console
+    printf("Received request:\n%s\n", buffer);
+
+    // Save received message to log file
+    FILE *fp;
+    fp = fopen("logfile.txt", "a");
+    if (fp == NULL) {
+        perror("ERROR opening file");
+        exit(1);
+    }
+    fprintf(fp, "%s\n", buffer);
+    fclose(fp);
+}
 
 int main() {
     int sockfd, newsockfd;
     socklen_t clilen;
-    char buffer[MAX_MESSAGE_SIZE];
     struct sockaddr_in serv_addr, cli_addr;
-    int n;
 
     // Create socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -73,40 +120,14 @@ int main() {
             exit(1);
         }
 
-        // Read request headers
-        memset(buffer, 0, MAX_MESSAGE_SIZE);
-        n = read(newsockfd, buffer, MAX_MESSAGE_SIZE - 1);
-        if (n < 0) {
-            perror("ERROR reading from socket");
-            exit(1);
-        }
-
-        // Find the end of the headers
-        char *body_start = strstr(buffer, "\r\n\r\n");
-        if (body_start == NULL) {
-            fprintf(stderr, "ERROR: Request headers not terminated properly\n");
-            exit(1);
-        }
-        // Move past the headers
-        body_start += 4;
-
-        // Save received message to log file
-        FILE *fp;
-        fp = fopen("logfile.txt", "a");
-        if (fp == NULL) {
-            perror("ERROR opening file");
-            exit(1);
-        }
-        fprintf(fp, "%s\n", body_start);
-        fclose(fp);
+        // Handle request
+        handle_request(newsockfd);
 
         // Send response to client
-        n = write(newsockfd, "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><body><h1>Message received</h1></body></html>\n", strlen("HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><body><h1>Message received</h1></body></html>\n"));
-        if (n < 0) {
-            perror("ERROR writing to socket");
-            exit(1);
-        }
+        const char *response = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n<html><body><h1>Message received</h1></body></html>\n";
+        write(newsockfd, response, strlen(response));
 
+        // Close connection
         close(newsockfd);
     }
 
@@ -114,10 +135,57 @@ int main() {
     return 0;
 }
 ```
-
 **Be responsible please :\)**
+
+#### Server Logs
+
+```
+POST / HTTP/1.1
+Host: 54.237.227.50:8080
+Content-Type: application/x-www-form-urlencoded
+Origin: https://agraymd.github.io
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1
+Content-Length: 1943
+Accept-Language: en-US,en;q=0.9
+Accept-Encoding: gzip, deflate
+
+fname=iPhone+&message=Safari+&g-recaptcha-response=03AFcWeA4hcE29z5IJDJk3ajcRcCCXk8Y1x1ByscMigvwaBdz9Ok_sqv-mJTY4POVViv9AFGujzedd3m9f8W_etDDehcsAR4ZUkxmPW3ei2HVtCbv1SZNS0Ciu0u7bzd3Kbxijboxh4ruSoN-9zKhV-Tbp6sRitfJ3DfdKvwNnS9FGCQ3jyesqlgDAPLxpaXYPHCfMjyVVymZIk3tFeS2IA40dhQVSyU1wS1RNemdewsISK_G6kelXSrlaa3odenj7wF54FKk4BOcGoj9XCkxsZlxiTKPmEUt79jZIslGCwt5SzEdnp9y1u7KnJaIQpVgsLJSEVINHwKa1VKaXWybs0xtZnjYu6eiIoeN2V7sAJavk3Y8LEw0HmuYrGbE3fT9nubeTNbf8rp5GqGIHlskOd6QntxK8iTCjBf1e1mrEos5xbHmgvu-uxrdzfNhwXxWuOi0GhpQBBnMW7XRsE2Ze67OmqVP4jNksGzV??~
+POST / HTTP/1.1
+Host: 54.237.227.50:8080
+Content-Type: application/x-www-form-urlencoded
+Origin: https://agraymd.github.io
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1
+Content-Length: 1979
+Accept-Language: en-US,en;q=0.9
+Accept-Encoding: gzip, deflate
+
+fname=Alexander&message=Fixing+phone+safari+&g-recaptcha-response=<snip>
+
+
+POST / HTTP/1.1
+Host: 54.237.227.50:8080
+Content-Type: application/x-www-form-urlencoded
+Origin: https://agraymd.github.io
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15
+Content-Length: 1935
+Accept-Language: en-US,en;q=0.9
+Accept-Encoding: gzip, deflate
+
+fname=Browser+Safari&message=On+the+MacBook&g-recaptcha-response=<snip>
+[ec2-user@ip-172-31-24-255 ~]$ 
+```
 
 - I added Google recaptcha to the form to prevent some abuse, and don't expect much traffic anyway. 
 - This is just a fun project for me to experiment with C programming, AWS, AI, web development, and security. 
+- This could be improved with further sercurity, more comprehensive messaging / response, load balancing for scaling, etc. 
 
 Thank you for checking out my page, and have a great day :D 
